@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Device Details for QR Code</h1>
+
+        <div class="form-group">
+            <button type="button" id="random-fill-btn" class="secondary-btn">Fill with Random Data</button>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="/generate" method="post">
+            <div class="form-group">
+                <label for="board_id">Board ID (8-char Hex) *</label>
+                <input type="text" id="board_id" name="board_id" required 
+                       maxlength="8" pattern="[0-9a-fA-F]{8}" title="8 hexadecimal characters">
+            </div>
+            
+            <div class="form-group">
+                <label for="number_of_relays">Number of Relays (max 8 digits)</label>
+                <input type="number" id="number_of_relays" name="number_of_relays" min="0" max="99999999" 
+                       oninput="if (this.value.length > 8) this.value = this.value.slice(0, 8);">
+            </div>
+
+            <div id="relay-id-container"></div>
+
+            <div class="form-group">
+                <label for="version_number">Version Number (max 8 chars)</label>
+                <input type="text" id="version_number" name="version_number" maxlength="8">
+            </div>
+
+            <div class="form-group">
+                <label for="build_number">Build Number (max 8 digits)</label>
+                <input type="number" id="build_number" name="build_number" min="0" max="99999999" 
+                       oninput="if (this.value.length > 8) this.value = this.value.slice(0, 8);">
+            </div>
+
+            <hr>
+            <h3>Additional Features</h3>
+            <div id="additional-features-container"></div>
+            <button type="button" id="add-feature-btn" class="secondary-btn">Add Feature</button>
+            <hr>
+            <button type="submit" class="primary-btn">Generate QR Code</button>
+        </form>
+    </div>
+
+    <script>
+        const numRelaysInput = document.getElementById('number_of_relays');
+        const relayIdContainer = document.getElementById('relay-id-container');
+
+        // --- NEW: JAVASCRIPT FOR RANDOM DATA FILL ---
+        document.getElementById('random-fill-btn').addEventListener('click', function() {
+            const btn = this;
+            btn.textContent = 'Generating...';
+            btn.disabled = true;
+
+            fetch("{{ url_for('get_random_unique_data') }}")
+                .then(response => response.json())
+                .then(data => {
+                    // Populate main fields
+                    document.getElementById('board_id').value = data.board_id;
+                    document.getElementById('number_of_relays').value = data.number_of_relays;
+                    document.getElementById('version_number').value = data.version_number;
+                    document.getElementById('build_number').value = data.build_number;
+
+                    // Trigger the input event to generate relay fields
+                    numRelaysInput.dispatchEvent(new Event('input'));
+
+                    // Use a small timeout to allow relay fields to be created before we fill them
+                    setTimeout(() => {
+                        const relayInputs = document.querySelectorAll('input[name="relay_id[]"]');
+                        relayInputs.forEach((input, index) => {
+                            input.value = data.relay_ids[index];
+                        });
+                    }, 50);
+
+                    // Clear and populate additional features
+                    const additionalFeaturesContainer = document.getElementById('additional-features-container');
+                    additionalFeaturesContainer.innerHTML = '';
+                    for (const key in data.additional_features) {
+                        const value = data.additional_features[key];
+                        const featureDiv = document.createElement('div');
+                        featureDiv.className = 'feature-group';
+                        featureDiv.innerHTML = `
+                            <input type="text" name="feature_key[]" value="${key}">
+                            <input type="text" name="feature_value[]" value="${value}">
+                            <button type="button" class="remove-btn" onclick="removeFeature(this)">Remove</button>
+                        `;
+                        additionalFeaturesContainer.appendChild(featureDiv);
+                    }
+
+                    btn.textContent = 'Fill with Random Data';
+                    btn.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error fetching random data:', error);
+                    alert('Could not fetch random data. Please try again.');
+                    btn.textContent = 'Fill with Random Data';
+                    btn.disabled = false;
+                });
+        });
+
+        // --- EXISTING JAVASCRIPT (no changes below this line) ---
+        numRelaysInput.addEventListener('input', function() {
+            relayIdContainer.innerHTML = '';
+            const count = parseInt(this.value, 10);
+            if (isNaN(count) || count <= 0) return;
+
+            const listLabel = document.createElement('label');
+            listLabel.textContent = 'Relay IDs (16-char Hex)';
+            listLabel.className = 'relay-list-label';
+            relayIdContainer.appendChild(listLabel);
+            
+            // This part is now primarily for manual entry, but still useful
+            const uniqueIds = new Set();
+            while (uniqueIds.size < count) {
+                uniqueIds.add(generateRandomHex(16));
+            }
+            uniqueIds.forEach(randomId => {
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'form-group relay-input-group';
+                inputGroup.innerHTML = `
+                    <input type="text" name="relay_id[]" value="${randomId}" required
+                           maxlength="16" pattern="[0-9a-fA-F]{16}" title="16 hexadecimal characters">
+                `;
+                relayIdContainer.appendChild(inputGroup);
+            });
+        });
+
+        function generateRandomHex(length) {
+            const buffer = new Uint8Array(length / 2);
+            window.crypto.getRandomValues(buffer);
+            return Array.from(buffer, byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        document.getElementById('add-feature-btn').addEventListener('click', function() {
+            const container = document.getElementById('additional-features-container');
+            const featureDiv = document.createElement('div');
+            featureDiv.className = 'feature-group';
+            featureDiv.innerHTML = `
+                <input type="text" name="feature_key[]" placeholder="Feature Name">
+                <input type="text" name="feature_value[]" placeholder="Feature Value">
+                <button type="button" class="remove-btn" onclick="removeFeature(this)">Remove</button>
+            `;
+            container.appendChild(featureDiv);
+        });
+
+        function removeFeature(button) {
+            button.parentElement.remove();
+        }
+    </script>
+</body>
+</html>

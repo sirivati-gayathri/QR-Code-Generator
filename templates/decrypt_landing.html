@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decrypt QR Code Data</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        /* Styles for the camera scanner with overlay */
+        #scanner-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 15px auto;
+            border: 2px solid #ddd;
+            display: none; /* Hidden by default */
+        }
+        #video-feed {
+            width: 100%;
+            height: auto;
+        }
+        /* The canvas is now visible and layered on top of the video */
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #loading-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Decrypt QR Code Data</h1>
+        
+        <button type="button" id="scan-qr-btn" class="secondary-btn">📷 Open Cam to Scan QR</button>
+        
+        <div id="scanner-container">
+            <video id="video-feed" playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div id="loading-message">Loading video stream...</div>
+        </div>
+        
+        <p style="text-align: center; margin-top: 15px;">...or paste the text from a QR code below.</p>
+        
+        <form id="decrypt-form">
+            <div class="form-group">
+                <label for="encrypted_text">Encrypted Text from QR Code</label>
+                <textarea id="encrypted_text" name="encrypted_text" rows="6" required>{{ encrypted_text }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="secret_key">Secret Key</label>
+                <input type="password" id="secret_key" name="secret_key" required>
+            </div>
+
+            <button type="submit" class="primary-btn">Decrypt Data</button>
+        </form>
+
+        <div id="decryption-result"></div>
+        <p style="margin-top: 20px;"><a href="/">Back to Generator</a></p>
+    </div>
+
+    <script>
+        const scanBtn = document.getElementById('scan-qr-btn');
+        const scannerContainer = document.getElementById('scanner-container');
+        const video = document.getElementById('video-feed');
+        const canvasElement = document.getElementById('canvas');
+        const canvas = canvasElement.getContext('2d');
+        const loadingMessage = document.getElementById('loading-message');
+        const encryptedTextArea = document.getElementById('encrypted_text');
+        const secretKeyInput = document.getElementById('secret_key');
+        
+        let stream = null;
+
+        function drawLine(begin, end, color) {
+            canvas.beginPath();
+            canvas.moveTo(begin.x, begin.y);
+            canvas.lineTo(end.x, end.y);
+            canvas.lineWidth = 4;
+            canvas.strokeStyle = color;
+            canvas.stroke();
+        }
+
+        function tick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                loadingMessage.hidden = true;
+                // Set canvas size to match video feed for accurate drawing
+                canvasElement.height = video.videoHeight;
+                canvasElement.width = video.videoWidth;
+                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
+
+                if (code) {
+                    // --- SUCCESS: QR code found! ---
+                    // Draw a green box around the detected QR code for visual feedback
+                    drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#00FF00");
+                    drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#00FF00");
+                    drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#00FF00");
+                    drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#00FF00");
+                    
+                    try {
+                        const url = new URL(code.data);
+                        const encryptedText = url.searchParams.get('data');
+                        encryptedTextArea.value = encryptedText || code.data;
+                    } catch (e) {
+                        encryptedTextArea.value = code.data;
+                    }
+                    
+                    secretKeyInput.focus();
+                    stream.getTracks().forEach(track => track.stop()); // Stop camera
+                    scannerContainer.style.display = 'none';
+                    stream = null;
+                    return;
+                }
+            }
+            // If no QR code is found, check the next frame
+            if (stream) {
+                 requestAnimationFrame(tick);
+            }
+        }
+
+        scanBtn.addEventListener('click', function() {
+            if (stream) { // If camera is on, turn it off
+                stream.getTracks().forEach(track => track.stop());
+                scannerContainer.style.display = 'none';
+                stream = null;
+                scanBtn.textContent = '📷 Open Cam to Scan QR';
+                return;
+            }
+
+            scanBtn.textContent = '📷 Closing Camera...';
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(function(cameraStream) {
+                    stream = cameraStream;
+                    scannerContainer.style.display = 'block';
+                    video.srcObject = stream;
+                    video.play();
+                    requestAnimationFrame(tick);
+                    scanBtn.textContent = '📷 Close Camera';
+                })
+                .catch(function(err) {
+                    console.error("Error accessing camera:", err);
+                    alert("Could not access the camera. Please ensure you have given permission.");
+                    scanBtn.textContent = '📷 Open Cam to Scan QR';
+                });
+        });
+
+        // This part for handling the form submission remains the same
+        document.getElementById('decrypt-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const secretKey = document.getElementById('secret_key').value;
+            const encryptedData = document.getElementById('encrypted_text').value;
+            const resultDiv = document.getElementById('decryption-result');
+
+            fetch("{{ url_for('decrypt_data') }}", {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    encrypted_text: encryptedData,
+                    secret_key: secretKey
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    resultDiv.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+                } else if (data.data) {
+                    const formattedJson = JSON.stringify(data.data, null, 4);
+                    resultDiv.innerHTML = `
+                        <hr>
+                        <h2>Decryption Result:</h2>
+                        <div class="results-box">
+                            <pre>${formattedJson}</pre>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `<div class="alert alert-error">An unexpected error occurred.</div>`;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+    "board_id": "12314ab0",
+    "number_of_relays": 3,
+    "version_number": "3.2.5",
+    "build_number": 23245455,
+    "relay_ids": [
+        "7a1ae65634d28b36",
+        "bbd07d48ed46f38e",
+        "bf921c1baefb43be"
+    ],
+    "additional_features": {}
+}

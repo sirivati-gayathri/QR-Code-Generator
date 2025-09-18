@@ -1,0 +1,18 @@
+{
+    "board_id": "6473a4e3",
+    "number_of_relays": 6,
+    "version_number": "4.2.3.4",
+    "build_number": 45727883,
+    "relay_ids": [
+        "031cd37d083a4385",
+        "2c0ecbb033499255",
+        "4a85dc4103004c65",
+        "a48bedb079dd9865",
+        "ac42064b61b9f9e1",
+        "e4e9e02abf81692e"
+    ],
+    "additional_features": {
+        "boared_count": "9",
+        "switch_no": "34"
+    }
+}
