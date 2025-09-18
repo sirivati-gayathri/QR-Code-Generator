@@ -39,7 +39,7 @@ def get_all_encrypted_data():
 def save_all_encrypted_data(data_list):
     with open(DATABASE_FILE, 'w') as file: json.dump(data_list, file, indent=4)
 
-# --- NEW: RANDOM DATA GENERATION HELPERS (Re-added) ---
+# --- RANDOM DATA GENERATION HELPERS ---
 def generate_random_hex(length):
     return secrets.token_hex(length // 2)
 
@@ -54,7 +54,6 @@ def generate_random_string(length):
 def index():
     return render_template('index.html')
 
-# --- NEW: ROUTE TO GENERATE RANDOM DATA (Re-added) ---
 @app.route('/get-random-unique-data')
 def get_random_unique_data():
     global f
@@ -67,7 +66,9 @@ def get_random_unique_data():
             all_records.append(json.loads(decrypted_bytes.decode('utf-8')))
         except (InvalidToken, json.JSONDecodeError): continue
     
-    while True: # Keep trying until a unique record is found
+    # MODIFICATION: Added a limit to prevent potential infinite loops
+    max_attempts = 100
+    for _ in range(max_attempts):
         num_relays = generate_random_int(1)
         random_data = {
             'board_id': generate_random_hex(8),
@@ -80,7 +81,10 @@ def get_random_unique_data():
             }
         }
         if random_data not in all_records:
-            return jsonify(random_data)
+            return jsonify(random_data) # Found a unique record
+            
+    # If loop finishes, we failed to find a unique record
+    return jsonify({'error': 'Failed to generate a unique record after several attempts. Please try again.'}), 500
 
 
 @app.route('/generate', methods=['POST'])
@@ -99,17 +103,19 @@ def generate_qr():
         flash("Invalid number format for a field.", "error")
         return redirect(url_for('index'))
 
-    board_id_to_check = data['board_id']
+    # MODIFICATION: Check for full data record uniqueness, not just Board ID
+    all_records = []
     all_encrypted_records = get_all_encrypted_data()
     for encrypted_record in all_encrypted_records:
         if not isinstance(encrypted_record, str): continue
         try:
             decrypted_bytes = f.decrypt(encrypted_record.encode('utf-8'))
-            decrypted_record = json.loads(decrypted_bytes.decode('utf-8'))
-            if decrypted_record.get('board_id') == board_id_to_check:
-                flash(f"Board ID '{board_id_to_check}' already exists.", "error")
-                return redirect(url_for('index'))
+            all_records.append(json.loads(decrypted_bytes.decode('utf-8')))
         except (InvalidToken, json.JSONDecodeError): continue 
+
+    if data in all_records:
+        flash("This exact data record already exists. Please change some values.", "error")
+        return redirect(url_for('index'))
 
     json_string = json.dumps(data, separators=(',', ':'))
     encrypted_data_string = f.encrypt(json_string.encode('utf-8')).decode('utf-8')
