@@ -1,5 +1,4 @@
-flask
-qrcode[pil] 
+Flask
+qrcode[pil]
 cryptography
 gunicorn
-
