@@ -1,2 +1,5 @@
 flask
+qrcode[pil] 
+cryptography
+gunicorn
 
