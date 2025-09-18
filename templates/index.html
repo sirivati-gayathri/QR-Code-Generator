@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator & Decryptor</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='CSS/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 </head>
 <body>
@@ -33,10 +33,14 @@
                         <label for="build_number">Build Number (max 8 digits)</label>
                         <input type="number" id="build_number" name="build_number" min="0" max="99999999" oninput="if (this.value.length > 8) this.value = this.value.slice(0, 8);">
                     </div>
-                    <hr>
-                    <h3>Additional Features</h3>
-                    <div id="additional-features-container"></div>
-                    <button type="button" id="add-feature-btn" class="secondary-btn">Add Feature</button>
+                    
+                    <div class="additional-features-section">
+                        <hr>
+                        <h3>Additional Features</h3>
+                        <div id="additional-features-container"></div>
+                        <button type="button" id="add-feature-btn" class="secondary-btn">Add Feature</button>
+                    </div>
+
                     <hr>
                     <button type="button" id="generate-btn" class="primary-btn">Generate QR Code</button>
                 </form>
@@ -69,14 +73,13 @@
             </div>
         </div>
     </div>
-
     <script>
-        // --- All JavaScript for the page ---
-        
-        // --- Part 1: Generator Logic ---
+        // All JavaScript logic remains the same.
+        // The fetch call will now show a more specific error if the server crashes.
         const generateForm = document.getElementById('generate-form');
         const generateBtn = document.getElementById('generate-btn');
         const qrResultContainer = document.getElementById('qr-result-container');
+        //...(rest of JS is unchanged)...
         const numRelaysInput = document.getElementById('number_of_relays');
         const relayIdContainer = document.getElementById('relay-id-container');
 
@@ -106,18 +109,13 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                qrResultContainer.innerHTML = `<div class="alert alert-error">An unexpected error occurred.</div>`;
+                qrResultContainer.innerHTML = `<div class="alert alert-error">A network error or unexpected issue occurred.</div>`;
             });
         });
 
         function generateRandomHex(length) { return Array.from(window.crypto.getRandomValues(new Uint8Array(length/2)), byte => byte.toString(16).padStart(2,'0')).join(''); }
 
-        numRelaysInput.addEventListener('input', function() { /* ... Relay generation logic as before ... */ });
-        document.getElementById('add-feature-btn').addEventListener('click', function() { /* ... Add feature logic as before ... */ });
-        document.getElementById('random-fill-btn').addEventListener('click', function() { /* ... Random fill logic as before ... */ });
-
-        // Helper functions for random fill and dynamic fields (pasted for completeness)
-        numRelaysInput.addEventListener('input', function() {
+        numRelaysInput.addEventListener('input', function() { 
             relayIdContainer.innerHTML = '';
             const count = parseInt(this.value, 10);
             if (isNaN(count) || count <= 0) return;
@@ -164,9 +162,6 @@
             }).catch(error => alert('Could not fetch random data.'))
             .finally(() => { btn.textContent = 'Fill with Random Data'; btn.disabled = false; });
         });
-
-
-        // --- Part 2: Decryptor Logic (Scanner and Form) ---
         const scanBtn = document.getElementById('scan-qr-btn');
         const scannerContainer = document.getElementById('scanner-container');
         const video = document.getElementById('video-feed');
@@ -178,13 +173,6 @@
         const decryptForm = document.getElementById('decrypt-form');
         const resultDiv = document.getElementById('decryption-result');
         let stream = null;
-
-        function drawLine(begin, end, color) { /* ... drawLine function as before ... */ }
-        function tick() { /* ... tick function as before ... */ }
-        scanBtn.addEventListener('click', function() { /* ... scanBtn listener as before ... */ });
-        decryptForm.addEventListener('submit', function(event) { /* ... decryptForm listener as before ... */ });
-
-        // Helper functions for decryptor (pasted for completeness)
         function drawLine(begin, end, color) {
             canvas.beginPath(); canvas.moveTo(begin.x, begin.y); canvas.lineTo(end.x, end.y);
             canvas.lineWidth = 4; canvas.strokeStyle = color; canvas.stroke();
@@ -250,4 +238,3 @@
     </script>
 </body>
 </html>
-
