@@ -1,107 +1,66 @@
-.alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    font-weight: bold;
-    text-align: center;
-}
-
-.alert-error {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-}
-
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-}
-
+/* --- NEW: Main Layout Styles --- */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: #f0f2f5;
     color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 20px;
+    margin: 0;
+    padding: 20px;
 }
 
+.main-container {
+    display: flex;
+    flex-wrap: wrap; /* Allows columns to stack on small screens */
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.column {
+    flex: 1; /* Each column takes up equal space */
+    min-width: 350px; /* Minimum width before stacking */
+}
+
+/* --- Existing Styles (no changes needed below) --- */
 .container {
     background-color: #ffffff;
     padding: 30px 40px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 500px;
+    box-sizing: border-box;
 }
 
 h1 {
     text-align: center;
     color: #1c1e21;
+    margin-top: 0;
     margin-bottom: 25px;
 }
 
-.form-group {
-    margin-bottom: 15px;
-}
+.form-group { margin-bottom: 15px; }
 
-.form-group label,
-.relay-list-label {
+.form-group label, .relay-list-label {
     display: block;
     margin-bottom: 5px;
     font-weight: 600;
     color: #606770;
 }
 
-.relay-input-group {
-    margin-bottom: 8px;
-}
-
-input:invalid {
-    border-color: #dc3545;
-}
-
-input:valid {
-    border-color: #28a745;
-}
-
 .form-group input[type="text"],
-.form-group input[type="number"] {
+.form-group input[type="number"],
+.form-group input[type="password"] {
     width: 100%;
     padding: 10px;
     border: 1px solid #dddfe2;
     border-radius: 6px;
-    box-sizing: border-box;
+    box-sizing: border-box; 
 }
 
-#board_id,
-.relay-input-group input {
-    font-family: monospace;
-}
+#board_id, .relay-input-group input { font-family: monospace; }
+hr { border: none; border-top: 1px solid #e0e0e0; margin: 25px 0; }
 
-hr {
-    border: none;
-    border-top: 1px solid #e0e0e0;
-    margin: 25px 0;
-}
-
-.feature-group {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    align-items: center;
-}
-
-.feature-group input {
-    flex-grow: 1;
-    padding: 10px;
-    border: 1px solid #dddfe2;
-    border-radius: 6px;
-}
+.feature-group { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+.feature-group input { flex-grow: 1; padding: 10px; border: 1px solid #dddfe2; border-radius: 6px; }
 
 button {
     width: 100%;
@@ -113,34 +72,21 @@ button {
     cursor: pointer;
     margin-top: 10px;
 }
+.primary-btn { background-color: #007bff; color: white; }
+.primary-btn:hover { background-color: #0056b3; }
+.secondary-btn { background-color: #6c757d; color: white; }
+.secondary-btn:hover { background-color: #5a6268; }
+.remove-btn { padding: 8px 12px; background-color: #dc3545; color: white; border-radius: 6px; cursor: pointer; width: auto; }
+.remove-btn:hover { background-color: #c82333; }
 
-.primary-btn {
-    background-color: #007bff;
-    color: white;
-}
+.alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; font-weight: bold; text-align: center; }
+.alert-error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
 
-.primary-btn:hover {
-    background-color: #0056b3;
-}
-
-.secondary-btn {
-    background-color: #6c757d;
-    color: white;
-}
-
-.secondary-btn:hover {
-    background-color: #5a6268;
-}
-
-.remove-btn {
-    padding: 8px 12px;
-    background-color: #dc3545;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    width: auto;
-}
-
-.remove-btn:hover {
-    background-color: #c82333;
-}
+/* Scanner and Result Styles */
+#scanner-container { position: relative; width: 100%; max-width: 400px; margin: 15px auto; border: 2px solid #ddd; display: none; }
+#video-feed { width: 100%; height: auto; }
+#canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+#loading-message { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.5); color: white; padding: 10px; border-radius: 5px; }
+textarea { width: 100%; padding: 10px; border: 1px solid #dddfe2; border-radius: 6px; box-sizing: border-box; font-family: monospace; resize: vertical; }
+.results-box { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 15px; margin-top: 20px; text-align: left; }
+.results-box pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; }
